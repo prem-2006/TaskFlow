@@ -5,3 +5,4 @@
 - refactor: unused imports
 - style: responsive breakpoints
 - refactor: hydration mismatch
+- style: layout shift
