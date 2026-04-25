@@ -6,3 +6,4 @@
 - style: responsive breakpoints
 - refactor: hydration mismatch
 - style: layout shift
+- docs: modal backdrop blur
