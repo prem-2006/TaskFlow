@@ -9,3 +9,4 @@
 - docs: modal backdrop blur
 - ci: missing keys in list
 - fix: input validation
+- docs: navigation active state
