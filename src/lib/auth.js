@@ -20,44 +20,20 @@ export const authOptions = {
       }
     }),
     CredentialsProvider({
-      name: 'credentials',
+      name: 'Credentials',
       credentials: {
-        email: { label: 'Email', type: 'email' },
-        password: { label: 'Password', type: 'password' },
+        email: { label: "Email", type: "email" },
+        password: { label: "Password", type: "password" }
       },
       async authorize(credentials) {
-        if (!credentials?.email || !credentials?.password) {
-          throw new Error('Email and password are required');
-        }
-
-        await dbConnect();
-
-        const user = await User.findOne({ email: credentials.email.toLowerCase() });
-
-        if (!user) {
-          throw new Error('No account found with this email');
-        }
-
-        if (!user.password) {
-          throw new Error('This account uses Google sign-in');
-        }
-
-        const isPasswordValid = await bcrypt.compare(
-          credentials.password,
-          user.password
-        );
-
-        if (!isPasswordValid) {
-          throw new Error('Invalid password');
-        }
-
+        // MOCKED FOR UI DEMO - BYPASS DATABASE COMPLETELY
         return {
-          id: user._id.toString(),
-          name: user.name,
-          email: user.email,
-          image: user.image,
+          id: 'mock-user-123',
+          name: 'Demo User',
+          email: credentials?.email || 'demo@taskflow.dev',
+          image: '',
         };
-      },
+      }
     }),
   ],
 
@@ -74,51 +50,28 @@ export const authOptions = {
   callbacks: {
     async signIn({ user, account }) {
       if (account?.provider === 'google') {
-        await dbConnect();
-
-        const existingUser = await User.findOne({ email: user.email });
-
-        if (!existingUser) {
-          const newUser = await User.create({
-            name: user.name,
-            email: user.email,
-            image: user.image,
-            emailVerified: new Date(),
-            googleAccessToken: account.access_token,
-            googleRefreshToken: account.refresh_token,
-          });
-          user.id = newUser._id.toString();
-        } else {
-          // Update tokens and image
-          let updated = false;
-          if (user.image && existingUser.image !== user.image) {
-            existingUser.image = user.image;
-            updated = true;
-          }
-          if (account.access_token && existingUser.googleAccessToken !== account.access_token) {
-            existingUser.googleAccessToken = account.access_token;
-            updated = true;
-          }
-          if (account.refresh_token && existingUser.googleRefreshToken !== account.refresh_token) {
-            existingUser.googleRefreshToken = account.refresh_token;
-            updated = true;
-          }
-          if (updated) await existingUser.save();
-          user.id = existingUser._id.toString();
-        }
+        // MOCKED FOR UI DEMO
+        user.id = 'mock-google-user-123';
       }
       return true;
     },
 
-    async jwt({ token, user }) {
+    async jwt({ token, user, account }) {
       if (user) {
         token.userId = user.id;
+      }
+      // Mock tokens
+      if (account?.access_token) {
+        token.accessToken = account.access_token;
+      }
+      if (account?.refresh_token) {
+        token.refreshToken = account.refresh_token;
       }
       return token;
     },
 
     async session({ session, token }) {
-      if (token) {
+      if (session.user) {
         session.user.id = token.userId;
       }
       return session;

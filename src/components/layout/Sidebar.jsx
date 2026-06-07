@@ -13,7 +13,9 @@ import {
   ChevronRight,
   Sparkles,
   X,
+  Users,
 } from 'lucide-react';
+import { mockWorkspaces } from '@/lib/mockData';
 
 const navItems = [
   { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
@@ -63,7 +65,6 @@ export default function Sidebar() {
             )}
           </Link>
 
-          {/* Mobile close */}
           <button
             onClick={closeMobile}
             className="lg:hidden p-1.5 rounded-lg text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-slate-100 dark:hover:bg-white/5"
@@ -71,6 +72,25 @@ export default function Sidebar() {
             <X className="w-5 h-5" />
           </button>
         </div>
+
+        {/* Workspace Switcher */}
+        {!isCollapsed && (
+          <div className="px-4 py-3 border-b border-[var(--border)]">
+            <div className="relative">
+              <select className="w-full appearance-none bg-slate-50 dark:bg-white/5 border border-[var(--border)] text-[var(--text-primary)] text-sm rounded-lg px-3 py-2 pr-8 focus:outline-none focus:ring-2 focus:ring-brand-500 font-medium">
+                {mockWorkspaces.map(ws => (
+                  <option key={ws._id} value={ws._id}>{ws.name}</option>
+                ))}
+              </select>
+              <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-[var(--text-muted)]">
+                <svg className="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/></svg>
+              </div>
+            </div>
+            <button className="mt-2 w-full flex items-center justify-center gap-2 text-xs font-medium text-brand-600 hover:text-brand-700 py-1.5 rounded-md hover:bg-brand-50 dark:hover:bg-brand-500/10 transition-colors">
+              <Users className="w-3.5 h-3.5" /> Invite Teammates
+            </button>
+          </div>
+        )}
 
         {/* Navigation */}
         <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto no-scrollbar">

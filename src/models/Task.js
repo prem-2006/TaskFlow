@@ -17,9 +17,25 @@ const TaskSchema = new mongoose.Schema(
     userId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',
-      required: true,
+      required: false, // Legacy fallback, prefer workspaceId + creatorId
       index: true,
     },
+    workspaceId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Workspace',
+      required: false, // Make false for backwards compatibility during migration
+      index: true,
+    },
+    creatorId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+    },
+    assigneeIds: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User',
+      }
+    ],
     projectId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Project',

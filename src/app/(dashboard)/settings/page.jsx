@@ -118,7 +118,7 @@ export default function SettingsPage() {
             <div className="flex items-center justify-between">
               <div>
                 <h4 className="font-medium text-[var(--text-primary)]">Daily Digest</h4>
-                <p className="text-sm text-[var(--text-secondary)]">Receive a summary of today's tasks every morning.</p>
+                <p className="text-sm text-[var(--text-secondary)]">Receive a summary of today&apos;s tasks every morning.</p>
               </div>
               <label className="relative inline-flex items-center cursor-pointer">
                 <input 

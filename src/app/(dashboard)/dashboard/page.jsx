@@ -125,7 +125,7 @@ export default function DashboardPage() {
             <div className="flex items-center justify-between mb-6 relative z-10">
               <h2 className="text-xl font-bold text-[var(--text-primary)] flex items-center gap-2">
                 <Calendar className="w-5 h-5 text-brand-500" />
-                Today's Focus
+                Today&apos;s Focus
               </h2>
               {todayTasks.length > 0 && (
                 <span className="text-sm font-medium text-[var(--text-muted)]">
@@ -149,7 +149,7 @@ export default function DashboardPage() {
                   <div className="w-16 h-16 bg-slate-100 dark:bg-slate-800 rounded-full flex items-center justify-center mx-auto mb-4">
                     <CheckSquare className="w-8 h-8 opacity-50" />
                   </div>
-                  <h3 className="text-lg font-medium text-[var(--text-primary)] mb-1">You're all caught up!</h3>
+                  <h3 className="text-lg font-medium text-[var(--text-primary)] mb-1">You&apos;re all caught up!</h3>
                   <p className="text-sm max-w-sm mx-auto">
                     Take a break, or grab a task from the backlog to get ahead.
                   </p>
@@ -174,7 +174,7 @@ export default function DashboardPage() {
                 AI Focus Tip
               </h3>
               <p className="text-sm text-white/90 leading-relaxed mb-4">
-                You have {upcomingTasks.length} tasks coming up this week. Consider knocking out "{upcomingTasks[0]?.title}" today since it's the highest priority.
+                You have {upcomingTasks.length} tasks coming up this week. Consider knocking out &quot;{upcomingTasks[0]?.title}&quot; today since it&apos;s the highest priority.
               </p>
               <Button size="sm" className="w-full bg-white text-brand-600 hover:bg-slate-50" onClick={() => router.push(`/tasks/${upcomingTasks[0]?._id}`)}>
                 View Task <ArrowRight className="w-4 h-4 ml-1" />

@@ -72,6 +72,29 @@ function AiMessage({ message, onAction }) {
             </div>
           </div>
         )}
+
+        {message.parsedTasks && (
+          <div className="mt-2 w-full space-y-2">
+            {message.parsedTasks.map((task, idx) => (
+              <div key={idx} className="bg-[var(--surface)] border border-[var(--border)] rounded-xl p-3 shadow-sm relative overflow-hidden">
+                <div className="absolute top-0 left-0 w-1 h-full bg-brand-500"></div>
+                <h4 className="font-semibold text-sm mb-1">{task.title}</h4>
+                <p className="text-xs text-[var(--text-secondary)] mb-2 line-clamp-1">{task.description}</p>
+                <div className="flex items-center justify-between mt-2">
+                  <span className="text-[10px] bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded capitalize text-[var(--text-secondary)]">
+                    {task.tags?.[0] || 'Task'}
+                  </span>
+                  <div className="w-5 h-5 rounded-full bg-brand-100 text-brand-700 flex items-center justify-center text-[10px] font-bold">
+                    {task.assigneeIds?.[0]?.replace('mock-user-', 'U') || 'U'}
+                  </div>
+                </div>
+              </div>
+            ))}
+            <Button size="sm" className="w-full text-xs py-1 mt-2" onClick={() => onAction('create', message.parsedTasks)}>
+              <Plus className="w-3 h-3 mr-1" /> Distribute All Tasks
+            </Button>
+          </div>
+        )}
       </div>
     </div>
   );
@@ -79,7 +102,7 @@ function AiMessage({ message, onAction }) {
 
 export default function AiChatPanel({ isOpen, onClose }) {
   const [messages, setMessages] = useState([
-    { role: 'assistant', content: "Hi! I'm your AI assistant. Tell me what you need to do, like 'Remind me to call John tomorrow at 3pm' or 'Break down writing my thesis into steps.'" }
+    { role: 'assistant', content: "Hi! I'm your Office AI. I can help distribute tasks, summarize meetings, or draft individual assignments." }
   ]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -91,18 +114,21 @@ export default function AiChatPanel({ isOpen, onClose }) {
     }
   }, [messages]);
 
-  async function handleSubmit(e) {
-    e.preventDefault();
-    if (!input.trim() || isLoading) return;
+  async function handleSubmit(e, overrideInput = null) {
+    if (e) e.preventDefault();
+    const textToProcess = overrideInput || input;
+    if (!textToProcess.trim() || isLoading) return;
 
-    const userMessage = { role: 'user', content: input };
+    const userMessage = { role: 'user', content: textToProcess };
     setMessages(prev => [...prev, userMessage]);
     setInput('');
     setIsLoading(true);
 
     try {
-      // For now, we mainly support parsing tasks from natural language
-      const res = await fetch('/api/ai/parse-task', {
+      const isMeetingNotes = textToProcess.toLowerCase().includes('meeting') || textToProcess.toLowerCase().includes('transcript');
+      const endpoint = isMeetingNotes ? '/api/ai/meeting-notes' : '/api/ai/parse-task';
+
+      const res = await fetch(endpoint, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ text: userMessage.content }),
@@ -110,9 +136,15 @@ export default function AiChatPanel({ isOpen, onClose }) {
 
       const data = await res.json();
       
-      if (!res.ok) throw new Error(data.error);
+      if (!res.ok) throw new Error(data.error || 'Failed to process');
 
-      if (data.parsed && data.parsed.title) {
+      if (isMeetingNotes && data.tasks) {
+        setMessages(prev => [...prev, { 
+          role: 'assistant', 
+          content: "I've analyzed the meeting notes and generated these tasks for the team. Shall I add them?",
+          parsedTasks: data.tasks
+        }]);
+      } else if (data.parsed && data.parsed.title) {
         setMessages(prev => [...prev, { 
           role: 'assistant', 
           content: "I've drafted a task based on what you said. How does this look?",
@@ -121,7 +153,7 @@ export default function AiChatPanel({ isOpen, onClose }) {
       } else {
         setMessages(prev => [...prev, { 
           role: 'assistant', 
-          content: "I'm not quite sure how to turn that into a task. Could you be more specific about what you need to do?"
+          content: "I'm not quite sure how to process that. Could you be more specific?"
         }]);
       }
     } catch (error) {
@@ -137,16 +169,27 @@ export default function AiChatPanel({ isOpen, onClose }) {
   async function handleAction(action, taskData) {
     if (action === 'create') {
       try {
-        const payload = {
-          ...taskData,
-          subtasks: taskData.subtasks?.map(st => ({ title: st.title, done: false })) || []
-        };
-        await createTask(payload);
-        toast.success('Task created from AI suggestion!');
-        setMessages(prev => [...prev, { 
-          role: 'assistant', 
-          content: `Great! I've created the task "${taskData.title}".`
-        }]);
+        if (Array.isArray(taskData)) {
+          // If bulk tasks (from meeting notes)
+          await Promise.all(taskData.map(t => createTask(t)));
+          toast.success(`${taskData.length} team tasks created!`);
+          setMessages(prev => [...prev, { 
+            role: 'assistant', 
+            content: `Great! I've distributed all ${taskData.length} tasks to the team.`
+          }]);
+        } else {
+          // Single task
+          const payload = {
+            ...taskData,
+            subtasks: taskData.subtasks?.map(st => ({ title: st.title, done: false })) || []
+          };
+          await createTask(payload);
+          toast.success('Task created and assigned!');
+          setMessages(prev => [...prev, { 
+            role: 'assistant', 
+            content: `Great! I've created the task "${taskData.title}".`
+          }]);
+        }
       } catch (error) {
         // error handled in hook
       }
@@ -192,6 +235,18 @@ export default function AiChatPanel({ isOpen, onClose }) {
           {messages.map((msg, i) => (
             <AiMessage key={i} message={msg} onAction={handleAction} />
           ))}
+          
+          {messages.length === 1 && !isLoading && (
+            <div className="flex flex-wrap gap-2 mt-4 animate-fade-in">
+              <button onClick={() => handleSubmit(null, "Summarize yesterday's meeting notes and create tasks")} className="text-xs bg-brand-50 text-brand-700 dark:bg-brand-500/10 dark:text-brand-300 px-3 py-1.5 rounded-full border border-brand-200 dark:border-brand-500/20 hover:bg-brand-100 transition-colors">
+                📝 Process Meeting Notes
+              </button>
+              <button onClick={() => handleSubmit(null, "Distribute tasks for the Q3 Launch Project")} className="text-xs bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 px-3 py-1.5 rounded-full border border-[var(--border)] hover:bg-slate-200 transition-colors">
+                🎯 Distribute Project Work
+              </button>
+            </div>
+          )}
+
           {isLoading && (
             <div className="flex gap-3 animate-fade-in">
               <div className="w-8 h-8 rounded-full gradient-bg shadow-glow flex items-center justify-center text-white flex-shrink-0">

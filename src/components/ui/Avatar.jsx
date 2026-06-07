@@ -1,5 +1,8 @@
 'use client';
 
+/* eslint-disable @next/next/no-img-element */
+import React from 'react';
+
 export default function Avatar({ name, image, size = 'md', className = '' }) {
   const sizeClasses = {
     sm: 'w-7 h-7 text-xs',

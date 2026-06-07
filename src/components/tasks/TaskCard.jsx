@@ -5,6 +5,7 @@ import { formatDate, isOverdue, isDueSoon } from '@/utils/dates';
 import { PriorityBadge, StatusBadge } from '@/components/ui/Badge';
 import { CheckSquare, Calendar, Folder, MoreVertical, Trash, Edit, Clock } from 'lucide-react';
 import Dropdown, { DropdownItem } from '@/components/ui/Dropdown';
+import Avatar from '@/components/ui/Avatar';
 import { updateTask, deleteTask } from '@/hooks/useTasks';
 import toast from 'react-hot-toast';
 
@@ -172,6 +173,17 @@ export default function TaskCard({ task, onClick, onEdit }) {
                   style={{ width: `${progressPercent}%` }}
                 />
               </div>
+            </div>
+          )}
+
+          {/* Assignees */}
+          {task.assignees?.length > 0 && (
+            <div className="flex items-center justify-end mt-3 -space-x-2">
+              {task.assignees.map((assignee, i) => (
+                <div key={assignee._id} className={`relative z-[${10 - i}] border-2 border-[var(--surface)] rounded-full`}>
+                  <Avatar name={assignee.name} image={assignee.image} size="sm" />
+                </div>
+              ))}
             </div>
           )}
         </div>
