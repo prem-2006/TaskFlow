@@ -47,6 +47,29 @@ function LoginContent() {
     signIn('google', { callbackUrl });
   }
 
+  async function handleDemoSignIn() {
+    setLoading(true);
+    try {
+      const result = await signIn('credentials', {
+        email: 'demo@taskflow.dev',
+        password: 'demo',
+        isDemoBypass: 'true',
+        redirect: false,
+      });
+
+      if (result?.error) {
+        setError(result.error);
+      } else {
+        router.push(callbackUrl);
+        router.refresh();
+      }
+    } catch (err) {
+      setError('Demo login failed.');
+    } finally {
+      setLoading(false);
+    }
+  }
+
   return (
     <div className="animate-fade-up">
       {/* Logo */}
@@ -90,6 +113,17 @@ function LoginContent() {
             />
           </svg>
           Continue with Google
+        </Button>
+
+        {/* Demo Sign In */}
+        <Button
+          variant="outline"
+          size="lg"
+          className="w-full mb-6"
+          onClick={handleDemoSignIn}
+          loading={loading}
+        >
+          🚀 Try Demo User (Bypass Login)
         </Button>
 
         {/* Divider */}

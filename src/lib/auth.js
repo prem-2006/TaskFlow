@@ -2,8 +2,7 @@ import NextAuth from 'next-auth';
 import CredentialsProvider from 'next-auth/providers/credentials';
 import GoogleProvider from 'next-auth/providers/google';
 import bcrypt from 'bcryptjs';
-import dbConnect from '@/lib/mongodb';
-import User from '@/models/User';
+import jsonStore, { hydrateDoc } from '@/lib/jsonStore';
 
 export const authOptions = {
   providers: [
@@ -23,15 +22,24 @@ export const authOptions = {
       name: 'Credentials',
       credentials: {
         email: { label: "Email", type: "email" },
-        password: { label: "Password", type: "password" }
+        password: { label: "Password", type: "password" },
+        isDemoBypass: { label: "Demo Bypass", type: "text" }
       },
       async authorize(credentials) {
+        if (credentials?.isDemoBypass === 'true') {
+          return {
+            id: 'mock-user-123',
+            name: 'Demo User',
+            email: 'demo@taskflow.dev',
+            image: '',
+          };
+        }
+
         if (!credentials?.email || !credentials?.password) {
           throw new Error('Email and password required');
         }
 
-        await dbConnect();
-        const user = await User.findOne({ email: credentials.email.toLowerCase() });
+        const user = jsonStore.users.findOne({ email: credentials.email.toLowerCase() });
 
         if (!user || !user.password) {
           throw new Error('Invalid email or password');
@@ -65,11 +73,10 @@ export const authOptions = {
 
   callbacks: {
     async signIn({ user, account, profile }) {
-      await dbConnect();
       if (account?.provider === 'google') {
-        let dbUser = await User.findOne({ email: user.email.toLowerCase() });
+        let dbUser = hydrateDoc(jsonStore.users.findOne({ email: user.email.toLowerCase() }), 'users');
         if (!dbUser) {
-          dbUser = await User.create({
+          dbUser = jsonStore.users.create({
             email: user.email.toLowerCase(),
             name: user.name,
             image: user.image,

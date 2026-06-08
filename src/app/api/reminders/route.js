@@ -1,8 +1,5 @@
 import { NextResponse } from 'next/server';
-import dbConnect from '@/lib/mongodb';
-import Reminder from '@/models/Reminder';
-import Task from '@/models/Task';
-import User from '@/models/User';
+import jsonStore from '@/lib/jsonStore';
 import { sendReminderEmail } from '@/lib/email';
 import { headers } from 'next/headers';
 
@@ -20,26 +17,18 @@ export async function GET(request) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    await dbConnect();
-
     // Find unsent reminders where triggerAt is in the past
-    const pendingReminders = await Reminder.find({
-      triggerAt: { $lte: new Date() },
-      sent: false
-    })
-      .populate('userId', 'email preferences')
-      .populate('taskId', 'title dueDate priority status');
+    const pendingReminders = jsonStore.reminders.find().filter(r => !r.sent && new Date(r.triggerAt) <= new Date());
 
     let sentCount = 0;
 
     for (const reminder of pendingReminders) {
-      const user = reminder.userId;
-      const task = reminder.taskId;
+      const user = jsonStore.users.findOne({ _id: reminder.userId });
+      const task = jsonStore.tasks.findOne({ _id: reminder.taskId });
 
       // Skip if task was completed or deleted
       if (!task || task.status === 'done' || !user) {
-        reminder.sent = true;
-        await reminder.save();
+        jsonStore.reminders.update(reminder._id, { sent: true });
         continue;
       }
 
@@ -57,15 +46,13 @@ export async function GET(request) {
         });
 
         if (success) {
-          reminder.sent = true;
-          await reminder.save();
+          jsonStore.reminders.update(reminder._id, { sent: true });
           sentCount++;
         }
       } else {
         // If it's a push notification, handle web-push logic here
         // (Assuming web-push is implemented separately via Service Worker)
-        reminder.sent = true;
-        await reminder.save();
+        jsonStore.reminders.update(reminder._id, { sent: true });
       }
     }
 

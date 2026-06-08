@@ -1,28 +1,25 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
-import dbConnect from '@/lib/mongodb';
-import Project from '@/models/Project';
-import Task from '@/models/Task';
+import jsonStore from '@/lib/jsonStore';
 
 export async function GET(request, { params }) {
   try {
     const session = await getServerSession(authOptions);
     if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-    await dbConnect();
-
-    const project = await Project.findOne({
+    const project = jsonStore.projects.findOne({
       _id: params.id,
       userId: session.user.id,
-    }).lean();
+    });
 
     if (!project) return NextResponse.json({ error: 'Project not found' }, { status: 404 });
 
-    const tasks = await Task.find({
+    let tasks = jsonStore.tasks.find({
       projectId: params.id,
       userId: session.user.id,
-    }).sort({ createdAt: -1 }).lean();
+    });
+    tasks.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
 
     return NextResponse.json({ project, tasks });
   } catch (error) {
@@ -36,14 +33,12 @@ export async function PUT(request, { params }) {
     const session = await getServerSession(authOptions);
     if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-    await dbConnect();
     const body = await request.json();
 
-    const project = await Project.findOneAndUpdate(
-      { _id: params.id, userId: session.user.id },
-      { $set: body },
-      { new: true }
-    );
+    const existingProject = jsonStore.projects.findOne({ _id: params.id, userId: session.user.id });
+    if (!existingProject) return NextResponse.json({ error: 'Project not found' }, { status: 404 });
+
+    const project = jsonStore.projects.update(params.id, body);
 
     if (!project) return NextResponse.json({ error: 'Project not found' }, { status: 404 });
 
@@ -59,22 +54,17 @@ export async function DELETE(request, { params }) {
     const session = await getServerSession(authOptions);
     if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-    await dbConnect();
+    const existingProject = jsonStore.projects.findOne({ _id: params.id, userId: session.user.id });
+    if (!existingProject) return NextResponse.json({ error: 'Project not found' }, { status: 404 });
 
     // Soft delete — archive
-    const project = await Project.findOneAndUpdate(
-      { _id: params.id, userId: session.user.id },
-      { archived: true },
-      { new: true }
-    );
-
-    if (!project) return NextResponse.json({ error: 'Project not found' }, { status: 404 });
+    const project = jsonStore.projects.update(params.id, { archived: true });
 
     // Unlink tasks from project
-    await Task.updateMany(
-      { projectId: params.id, userId: session.user.id },
-      { $set: { projectId: null } }
-    );
+    const tasksToUpdate = jsonStore.tasks.find({ projectId: params.id, userId: session.user.id });
+    for (let t of tasksToUpdate) {
+      jsonStore.tasks.update(t._id, { projectId: null });
+    }
 
     return NextResponse.json({ message: 'Project archived' });
   } catch (error) {

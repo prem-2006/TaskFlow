@@ -1,27 +1,16 @@
-import mongoose from 'mongoose';
-import dotenv from 'dotenv';
-dotenv.config({ path: '.env.local' });
+const mongoose = require('mongoose');
+
+const uri = "mongodb://premsingh12198:Guru1298@ac-rechvid-shard-00-00.evvwkpa.mongodb.net:27017,ac-rechvid-shard-00-01.evvwkpa.mongodb.net:27017,ac-rechvid-shard-00-02.evvwkpa.mongodb.net:27017/taskflow?ssl=true&replicaSet=atlas-rechvid-shard-0&authSource=admin&retryWrites=true&w=majority";
 
 async function testConnection() {
-  console.log('Testing MongoDB connection...');
-  console.log('URI:', process.env.MONGODB_URI);
+  console.log("Attempting to connect to MongoDB...");
   try {
-    await mongoose.connect(process.env.MONGODB_URI, { serverSelectionTimeoutMS: 5000 });
-    console.log('Success: Connected to MongoDB');
-    
-    // Test user creation
-    const User = mongoose.models.User || mongoose.model('User', new mongoose.Schema({
-      name: String,
-      email: String
-    }, { strict: false }));
-    
-    const count = await User.countDocuments();
-    console.log(`Success: Found ${count} users in the database.`);
-    
+    await mongoose.connect(uri, { serverSelectionTimeoutMS: 5000 });
+    console.log("✅ Successfully connected!");
     process.exit(0);
-  } catch (error) {
-    console.error('Error connecting to MongoDB:');
-    console.error(error.message);
+  } catch (err) {
+    console.error("❌ Connection failed!");
+    console.error(err.message);
     process.exit(1);
   }
 }
