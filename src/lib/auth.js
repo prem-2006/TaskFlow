@@ -26,12 +26,28 @@ export const authOptions = {
         password: { label: "Password", type: "password" }
       },
       async authorize(credentials) {
-        // MOCKED FOR UI DEMO - BYPASS DATABASE COMPLETELY
+        if (!credentials?.email || !credentials?.password) {
+          throw new Error('Email and password required');
+        }
+
+        await dbConnect();
+        const user = await User.findOne({ email: credentials.email.toLowerCase() });
+
+        if (!user || !user.password) {
+          throw new Error('Invalid email or password');
+        }
+
+        const isValid = await bcrypt.compare(credentials.password, user.password);
+
+        if (!isValid) {
+          throw new Error('Invalid email or password');
+        }
+
         return {
-          id: 'mock-user-123',
-          name: 'Demo User',
-          email: credentials?.email || 'demo@taskflow.dev',
-          image: '',
+          id: user._id.toString(),
+          name: user.name,
+          email: user.email,
+          image: user.image || '',
         };
       }
     }),
@@ -48,10 +64,27 @@ export const authOptions = {
   },
 
   callbacks: {
-    async signIn({ user, account }) {
+    async signIn({ user, account, profile }) {
+      await dbConnect();
       if (account?.provider === 'google') {
-        // MOCKED FOR UI DEMO
-        user.id = 'mock-google-user-123';
+        let dbUser = await User.findOne({ email: user.email.toLowerCase() });
+        if (!dbUser) {
+          dbUser = await User.create({
+            email: user.email.toLowerCase(),
+            name: user.name,
+            image: user.image,
+            googleAccessToken: account.access_token,
+            googleRefreshToken: account.refresh_token,
+            emailVerified: Date.now(),
+          });
+        } else {
+          dbUser.googleAccessToken = account.access_token;
+          if (account.refresh_token) {
+            dbUser.googleRefreshToken = account.refresh_token;
+          }
+          await dbUser.save();
+        }
+        user.id = dbUser._id.toString();
       }
       return true;
     },
