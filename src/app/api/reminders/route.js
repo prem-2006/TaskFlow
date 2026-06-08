@@ -6,6 +6,8 @@ import User from '@/models/User';
 import { sendReminderEmail } from '@/lib/email';
 import { headers } from 'next/headers';
 
+export const dynamic = 'force-dynamic';
+
 // This endpoint is meant to be called by a cron job (e.g. Vercel Cron)
 // We use a simple CRON_SECRET to secure it.
 export async function GET(request) {

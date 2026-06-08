@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useTasks, createTask, updateTask } from '@/hooks/useTasks';
 import TaskList from '@/components/tasks/TaskList';
@@ -12,7 +12,7 @@ import Button from '@/components/ui/Button';
 import { Plus } from 'lucide-react';
 import toast from 'react-hot-toast';
 
-export default function TasksPage() {
+function TasksContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   
@@ -160,5 +160,13 @@ export default function TasksPage() {
         </div>
       </Modal>
     </div>
+  );
+}
+
+export default function TasksPage() {
+  return (
+    <Suspense fallback={null}>
+      <TasksContent />
+    </Suspense>
   );
 }
