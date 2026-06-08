@@ -7,9 +7,9 @@ import { useRouter } from 'next/navigation';
 export default function ProjectCard({ project, onEdit, onArchive }) {
   const router = useRouter();
 
-  const progress = project.taskCount > 0 
-    ? Math.round((project.completedCount / project.taskCount) * 100) 
-    : 0;
+  const completed = project.completedCount || 0;
+  const total = project.taskCount || 0;
+  const progress = total > 0 ? Math.round((completed / total) * 100) : 0;
 
   return (
     <div 
@@ -73,7 +73,7 @@ export default function ProjectCard({ project, onEdit, onArchive }) {
         <div className="flex items-center justify-between text-xs text-[var(--text-muted)] mb-2">
           <span className="flex items-center gap-1.5">
             <CheckSquare className="w-3.5 h-3.5" />
-            {project.completedCount} / {project.taskCount} tasks
+            {completed} / {total} tasks
           </span>
           <span className="font-medium text-[var(--text-primary)]">{progress}%</span>
         </div>
