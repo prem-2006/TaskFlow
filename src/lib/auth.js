@@ -28,7 +28,7 @@ export const authOptions = {
       async authorize(credentials) {
         if (credentials?.isDemoBypass === 'true') {
           return {
-            id: 'mock-user-123',
+            id: '000000000000000000000000',
             name: 'Demo User',
             email: 'demo@taskflow.dev',
             image: '',
