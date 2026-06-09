@@ -118,7 +118,7 @@ export const authOptions = {
     },
   },
 
-  secret: process.env.NEXTAUTH_SECRET,
+  secret: process.env.NEXTAUTH_SECRET || 'fallback_secret_for_demo_purposes_only',
 };
 
 export default NextAuth(authOptions);

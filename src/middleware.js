@@ -17,7 +17,8 @@ export async function middleware(request) {
   // Check for JWT token
   const token = await getToken({
     req: request,
-    secret: process.env.NEXTAUTH_SECRET,
+    secret: process.env.NEXTAUTH_SECRET || 'fallback_secret_for_demo_purposes_only',
+    secureCookie: process.env.NODE_ENV === 'production',
   });
 
   // Redirect to login if not authenticated
